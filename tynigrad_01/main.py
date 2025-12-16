@@ -11,6 +11,10 @@ from sklearn.preprocessing import RobustScaler
 from ta import add_all_ta_features
 from ta.utils import dropna
 
+import numpy as np
+
+from tinygrad import Tensor, dtypes
+
 DATA_URL = "data_0.csv"
 
 def download_data(url):
@@ -84,16 +88,28 @@ def datetime_to_categoric(df):
     df['minute'] = df['Datetime'].dt.minute  # Extract minute
     return df
 
-def create_sequence_data(df, window_size=1):
-    X, y = [], []
-    print(df[['Close', 'High']].values)
+def normalize_dataset(df):
+    numerical_features      = df.select_dtypes(include=['number']).columns.tolist()
+    scaler                  = RobustScaler()
+    df[numerical_features]  = scaler.fit_transform(df[numerical_features])
+    return df, scaler
+    
+def create_sequence_data(df, target_col='Close', window_size=60, horizon=5):
+    X, y        = [], []
+
+    df          = df.drop(columns=["Datetime"])
+    values      = df.values
+    target_idx  = df.columns.get_loc(target_col)
+
+    for i in range(len(df) - window_size - horizon):
+        X.append(values[i:i+window_size, :])
+        y.append(values[i+window_size:i+window_size+horizon, target_idx])
+    return np.array(X), np.array(y)
 
 if __name__ == "__main__":
+    # Data preprocessing
     data = download_data(DATA_URL)
     data = add_indicators(data)
-    # data = data.iloc[1:]
-    # print(data['others_dlr'].isna().sum())
-    # data = drop_low_correlation_columns(data)
     data = datetime_to_categoric(data)
     data = drop_n_nans(data, 100)
     data = data.iloc[91:]
@@ -101,7 +117,34 @@ if __name__ == "__main__":
     print(data.shape)
     data = data.drop(['volume_vwap', 'volume_mfi', 'volume_cmf', 'volatility_kcp'], axis=1)
 
-
-    plot_nans(data)
+    # First Plots
     plot_price(data)
-    # create_sequence_data(data)
+
+    # Normalize Data
+    data_normalized, scaler = normalize_dataset(data)
+    plot_price(data_normalized)
+    print(data.head())
+    print(data.shape)
+
+    # Create Sequence Data
+    WINDOW_SIZE = 60
+    HORIZON = 5
+    X, y = create_sequence_data(
+            data_normalized,
+            window_size = WINDOW_SIZE,
+            horizon     = HORIZON
+    )
+    print("THE DTYPE: ", X.dtype)
+    print(X.shape)
+    # print(X[0][0][1])
+    # print(X[0][0][1].dtype)
+    print(y.shape)
+
+    split = int(0.8 * len(X))
+    X_train, X_val = X[:split], X[split:]
+    y_train, y_val = y[:split], y[split:]
+
+    X_train = Tensor(X_train, dtype=dtypes.float32)
+    y_train = Tensor(y_train, dtype=dtypes.float32)
+    X_val   = Tensor(X_val, dtype=dtypes.float32)
+    y_val = Tensor(y_val, dtype=dtypes.float32)
