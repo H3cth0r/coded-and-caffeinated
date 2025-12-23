@@ -321,6 +321,7 @@ if __name__ == "__main__":
     print(data.head())
     print(data.shape)
     data = data.drop(['volume_vwap', 'volume_mfi', 'volume_cmf', 'volatility_kcp'], axis=1)
+    data = drop_low_correlation_columns(data, target_column="Close", threshold=0.3)
 
     # First Plots
     plot_price(data)
@@ -332,7 +333,7 @@ if __name__ == "__main__":
     print(data.shape)
 
     # Create Sequence Data
-    WINDOW_SIZE = 60
+    WINDOW_SIZE = 30
     HORIZON = 5
     X, y = create_sequence_data(
             data_normalized,
