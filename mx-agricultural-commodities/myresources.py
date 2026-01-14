@@ -36,7 +36,7 @@ def scrape_agricultural(BASE_URL, HEADERS, PARAMS):
     page = 1
 
     while True:
-        print(f'Scraping page {page} ...')
+        print(f'\rScraping page {page} ...', end='', flush=True)
         all_rows.extend(parse_table(soup))
 
         # Check pagination text
@@ -62,6 +62,7 @@ def scrape_agricultural(BASE_URL, HEADERS, PARAMS):
         soup = BeautifulSoup(response.text, "lxml")
         page += 1
 
+    print()
     columns = [
         "Fecha",
         "Presentación",
