@@ -77,6 +77,14 @@ Notebooks stay in the projects; only promoted `.py` modules go into `qfin/`.
 
 ---
 
+## Documentation
+
+Per-project implementation plans and reference docs live in [`docs/`](docs/index.md):
+
+- [Project 00 — Data Toolkit: Implementation Plan](docs/project-00-data-toolkit.md)
+
+---
+
 ## Environment & setup
 
 - **Python environment**: one venv for the whole repo (`python -m venv .venv`).
